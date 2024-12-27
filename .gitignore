@@ -1,0 +1,34 @@
+# PHP-specific
+*.log
+*.cache
+*.tmp
+vendor/
+composer.lock
+.env
+.phpunit.result.cache
+.php_cs.cache
+/.vscode/
+.idea/
+
+# Docker-specific
+docker-compose.override.yml
+docker-compose.override.yaml
+*.env
+.dockerignore
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Node modules (if using front-end assets with npm/yarn)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Additional IDE and Editor configurations
+/.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.orig
