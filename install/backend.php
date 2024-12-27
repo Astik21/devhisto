@@ -7,33 +7,12 @@ $formData = $request['formData'] ?? [];
 
 try {
     switch ($step) {
-        case 'Droits en écriture (config.php)':
-            $configFile = __DIR__ . '/../config.php';
-            if (is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile))) {
-                echo json_encode(['status' => 'ok']);
-            } else {
-                echo json_encode(['status' => 'ko', 'message' => 'Pas de droits suffisants pour config.php.']);
-            }
-            break;
-
-        case 'Extensions PHP (pdo_mysql)':
-        case 'Extensions PHP (mbstring)':
-        case 'Extensions PHP (json)':
-        case 'Extensions PHP (ctype)':
-            $extension = strtolower(explode(' ', $step)[2]);
-            if (extension_loaded($extension)) {
-                echo json_encode(['status' => 'ok']);
-            } else {
-                echo json_encode(['status' => 'ko', 'message' => "Extension PHP $extension manquante."]);
-            }
-            break;
-
-        case 'Validation du serveur MySQL':
+        case 'Connexion au serveur SQL':
             $pdo = new PDO("mysql:host={$formData['db_host']};port={$formData['db_port']}", $formData['db_user'], $formData['db_pass']);
             echo json_encode(['status' => 'ok']);
             break;
 
-        case 'Validation des identifiants MySQL':
+        case 'Validation des identifiants SQL':
             $pdo = new PDO("mysql:host={$formData['db_host']};port={$formData['db_port']};dbname={$formData['db_name']}", $formData['db_user'], $formData['db_pass']);
             echo json_encode(['status' => 'ok']);
             break;

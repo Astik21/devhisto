@@ -7,8 +7,8 @@ $validationSteps = [
     'Extensions PHP (mbstring)' => 'pending',
     'Extensions PHP (json)' => 'pending',
     'Extensions PHP (ctype)' => 'pending',
-    'Validation du serveur MySQL' => 'pending',
-    'Validation des identifiants MySQL' => 'pending',
+    'Connexion au serveur SQL' => 'pending',
+    'Validation des identifiants SQL' => 'pending',
     'Enregistrement de config.php' => 'pending',
     'Création des tables SQL' => 'pending',
     'Création de l\'utilisateur admin' => 'pending'
@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <h1>Installation de l'outil</h1>
     <div id="validation-container">
+        <h2>Étapes de validation</h2>
         <ul id="validation-steps">
             <?php foreach ($validationSteps as $step => $status): ?>
                 <li data-step="<?= htmlspecialchars($step) ?>" class="status-pending"><?= $step ?></li>
