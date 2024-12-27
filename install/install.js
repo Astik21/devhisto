@@ -1,4 +1,3 @@
-
 document.getElementById('start-installation').addEventListener('click', async () => {
     const formData = Object.fromEntries(new FormData(document.getElementById('installation-form')).entries());
     const steps = document.querySelectorAll('#validation-steps li');

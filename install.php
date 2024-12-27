@@ -1,10 +1,21 @@
-
 <?php
-// Entry point for the installation process
 session_start();
 
-// Redirect AJAX requests to the backend handler
+$validationSteps = [
+    'Droits en écriture (config.php)' => 'pending',
+    'Extensions PHP (pdo_mysql)' => 'pending',
+    'Extensions PHP (mbstring)' => 'pending',
+    'Extensions PHP (json)' => 'pending',
+    'Extensions PHP (ctype)' => 'pending',
+    'Validation du serveur MySQL' => 'pending',
+    'Validation des identifiants MySQL' => 'pending',
+    'Enregistrement de config.php' => 'pending',
+    'Création des tables SQL' => 'pending',
+    'Création de l\'utilisateur admin' => 'pending'
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
     require_once __DIR__ . '/install/backend.php';
     exit;
 }
@@ -22,30 +33,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>Installation de l'outil</h1>
     <div id="validation-container">
         <ul id="validation-steps">
-            <li data-step="check-write">Droits en écriture (config.php)</li>
-            <li data-step="check-extension-pdo">Extension PHP: pdo_mysql</li>
-            <li data-step="check-extension-mbstring">Extension PHP: mbstring</li>
-            <li data-step="check-extension-json">Extension PHP: json</li>
-            <li data-step="check-extension-ctype">Extension PHP: ctype</li>
-            <li data-step="check-mysql-server">Connexion au serveur MySQL</li>
-            <li data-step="check-mysql-credentials">Validation des identifiants MySQL</li>
-            <li data-step="create-config">Enregistrement du fichier config.php</li>
-            <li data-step="create-tables">Création des tables SQL</li>
-            <li data-step="create-admin">Création de l'utilisateur admin</li>
+            <?php foreach ($validationSteps as $step => $status): ?>
+                <li data-step="<?= htmlspecialchars($step) ?>" class="status-pending"><?= $step ?></li>
+            <?php endforeach; ?>
         </ul>
     </div>
-    <div id="form-container">
+    <div id="form-container" style="display:none;">
         <form id="installation-form">
-            <label for="db_host">Hôte MySQL :</label><br>
-            <input type="text" id="db_host" name="db_host" placeholder="localhost" required><br><br>
-            <label for="db_port">Port MySQL :</label><br>
-            <input type="text" id="db_port" name="db_port" placeholder="3306"><br><br>
-            <label for="db_name">Nom de la base de données :</label><br>
-            <input type="text" id="db_name" name="db_name" required><br><br>
-            <label for="db_user">Utilisateur MySQL :</label><br>
-            <input type="text" id="db_user" name="db_user" required><br><br>
-            <label for="db_pass">Mot de passe MySQL :</label><br>
-            <input type="password" id="db_pass" name="db_pass"><br><br>
+            <label for="db_host">Hôte MySQL :</label>
+            <input type="text" id="db_host" name="db_host" placeholder="localhost" required><br>
+            <label for="db_port">Port MySQL :</label>
+            <input type="text" id="db_port" name="db_port" placeholder="3306"><br>
+            <label for="db_name">Nom de la base de données :</label>
+            <input type="text" id="db_name" name="db_name" required><br>
+            <label for="db_user">Utilisateur MySQL :</label>
+            <input type="text" id="db_user" name="db_user" required><br>
+            <label for="db_pass">Mot de passe MySQL :</label>
+            <input type="password" id="db_pass" name="db_pass"><br>
             <button type="button" id="start-installation">Lancer l'installation</button>
         </form>
     </div>
