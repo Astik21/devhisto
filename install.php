@@ -1,28 +1,57 @@
 <?php
-// Vérification des extensions PHP nécessaires
-function checkExtensions($requiredExtensions) {
-    $results = [];
-    foreach ($requiredExtensions as $extension) {
-        $results[$extension] = extension_loaded($extension) ? 'ok' : 'ko';
-    }
-    return $results;
-}
-
-// Initialisation des contrôles
-$checks = [];
+// Initialisation des étapes de validation
+$validationSteps = [
+    'Droits en écriture (config.php)' => 'pending',
+    'Extensions PHP (pdo_mysql)' => 'pending',
+    'Extensions PHP (mbstring)' => 'pending',
+    'Extensions PHP (json)' => 'pending',
+    'Extensions PHP (ctype)' => 'pending',
+    'Validation du serveur MySQL' => 'pending',
+    'Validation des identifiants MySQL' => 'pending',
+    'Enregistrement de config.php' => 'pending',
+    'Création des tables SQL' => 'pending',
+    'Création de l\'utilisateur admin' => 'pending'
+];
 
 // Vérification des droits d'écriture sur config.php
 $configFile = __DIR__ . '/config.php';
-$canWriteConfig = is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile));
-$checks['write'] = $canWriteConfig ? 'ok' : 'ko';
+if (is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile))) {
+    $validationSteps['Droits en écriture (config.php)'] = 'ok';
+} else {
+    $validationSteps['Droits en écriture (config.php)'] = 'ko';
+}
 
 // Vérification des extensions PHP nécessaires
 $requiredExtensions = ['pdo_mysql', 'mbstring', 'json', 'ctype'];
-$extensionResults = checkExtensions($requiredExtensions);
-$checks['Extensions PHP'] = $extensionResults;
+foreach ($requiredExtensions as $extension) {
+    $validationSteps["Extensions PHP ($extension)"] = extension_loaded($extension) ? 'ok' : 'ko';
+}
 
-// Vérifier si tout est OK
-$canProceed = $checks['write'] === 'ok' && !in_array('ko', $extensionResults);
+// Vérifier si tout est OK pour afficher le formulaire
+$canProceed = !in_array('ko', $validationSteps);
+
+// Génération du fichier config.php
+function generateConfigFile($dbHost, $dbUser, $dbPassword, $dbName) {
+    return <<<PHP
+<?php
+// Fichier généré automatiquement par install.php
+define('DB_HOST', '{$dbHost}');
+define('DB_USER', '{$dbUser}');
+define('DB_PASSWORD', '{$dbPassword}');
+define('DB_NAME', '{$dbName}');
+
+// Autres configurations possibles
+define('APP_DEBUG', false); // Activez true pour le mode débogage
+PHP;
+}
+
+// Enregistrement sécurisé de config.php
+function saveConfigFile($filePath, $content) {
+    if (file_exists($filePath)) {
+        return false; // Ne pas écraser un fichier existant
+    }
+    return file_put_contents($filePath, $content) !== false;
+}
 
 // Traiter le formulaire si tout est OK
 if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -37,37 +66,46 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // Tester la connexion à MySQL
-        $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
+        // Étape 1 : Validation du serveur MySQL
+        $pdo = new PDO("mysql:host=$dbHost", $dbUser, $dbPass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $validationSteps['Validation du serveur MySQL'] = 'ok';
 
-        // Générer le fichier config.php avec les informations
-        $configContent = "<?php\n\nreturn [\n" .
-                         "    'DB_HOST' => '$dbHost',\n" .
-                         "    'DB_NAME' => '$dbName',\n" .
-                         "    'DB_USER' => '$dbUser',\n" .
-                         "    'DB_PASS' => '$dbPass',\n" .
-                         "];\n";
-        file_put_contents($configFile, $configContent);
+        // Étape 2 : Validation des identifiants MySQL
+        $pdo->exec("USE $dbName");
+        $validationSteps['Validation des identifiants MySQL'] = 'ok';
 
-        // Exécuter le script SQL
+        // Étape 3 : Enregistrement de config.php
+        $configContent = generateConfigFile($dbHost, $dbUser, $dbPass, $dbName);
+        if (saveConfigFile($configFile, $configContent)) {
+            $validationSteps['Enregistrement de config.php'] = 'ok';
+        } else {
+            $validationSteps['Enregistrement de config.php'] = 'ko';
+            throw new Exception("Impossible d'écrire dans config.php. Vérifiez les droits ou supprimez l'ancien fichier.");
+        }
+
+        // Étape 4 : Création des tables SQL
         $sql = file_get_contents(__DIR__ . '/install/bdd.sql');
         $pdo->exec($sql);
+        $validationSteps['Création des tables SQL'] = 'ok';
 
-        // Créer l'utilisateur admin
+        // Étape 5 : Création de l'utilisateur admin
         $passwordHash = password_hash('admin', PASSWORD_BCRYPT);
         $sqlInsertAdmin = "INSERT INTO users (username, password, role_id) 
                            VALUES ('admin', :password, (SELECT id FROM roles WHERE role_name = 'admin'))";
         $stmt = $pdo->prepare($sqlInsertAdmin);
         $stmt->bindParam(':password', $passwordHash);
         $stmt->execute();
+        $validationSteps['Création de l\'utilisateur admin'] = 'ok';
 
-        // Rediriger vers la page de connexion
-        header("Location: /index.php");
-        exit;
+        // Tout est OK, afficher le bouton "Suivant"
+        $installationComplete = true;
 
     } catch (PDOException $e) {
+        $validationSteps['Validation du serveur MySQL'] = 'ko';
         $error = "Erreur de connexion : " . $e->getMessage();
+    } catch (Exception $e) {
+        $error = $e->getMessage();
     }
 }
 ?>
@@ -81,47 +119,42 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         .status-ok { color: green; font-weight: bold; }
         .status-ko { color: red; font-weight: bold; }
+        .status-pending { color: orange; font-weight: bold; }
         .status-icon { font-size: 1.2em; }
     </style>
 </head>
 <body>
     <h1>Installation de l'outil</h1>
-    
-    <div>
-        <h2>Étapes de contrôle</h2>
-        <ul>
-            <!-- Vérification des droits d'écriture -->
-            <li>
-                <span class="status-icon">
-                    <?= $checks['write'] === 'ok' ? '✅' : '❌' ?>
-                </span>
-                <span class="<?= $checks['write'] === 'ok' ? 'status-ok' : 'status-ko' ?>">
-                    Droits en écriture
-                </span>
-            </li>
 
-            <!-- Vérification des extensions PHP -->
-            <li>
-                <span>Extensions PHP :</span>
-                <ul>
-                    <?php foreach ($checks['Extensions PHP'] as $extension => $result): ?>
-                        <li>
-                            <span class="status-icon">
-                                <?= $result === 'ok' ? '✅' : '❌' ?>
-                            </span>
-                            <span class="<?= $result === 'ok' ? 'status-ok' : 'status-ko' ?>">
-                                <?= htmlspecialchars($extension) ?>
-                            </span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            </li>
+    <div>
+        <h2>Étapes de validation</h2>
+        <ul>
+            <?php foreach ($validationSteps as $step => $status): ?>
+                <li>
+                    <span class="status-icon">
+                        <?= $status === 'ok' ? '✅' : ($status === 'ko' ? '❌' : '⏳') ?>
+                    </span>
+                    <span class="<?= 'status-' . $status ?>">
+                        <?= htmlspecialchars($step) ?>
+                    </span>
+                </li>
+            <?php endforeach; ?>
         </ul>
     </div>
 
-    <?php if (!$canProceed): ?>
-        <p style="color: red;">Veuillez corriger les erreurs ci-dessus et recharger la page pour continuer.</p>
-    <?php else: ?>
+    <?php if (!empty($error)): ?>
+        <p style="color: red;">Erreur : <?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
+
+    <?php if (isset($installationComplete) && $installationComplete): ?>
+        <div>
+            <p style="color: green;">L'installation est terminée avec succès !</p>
+            <p style="color: red;">Pour des raisons de sécurité, supprimez immédiatement le fichier <strong>install.php</strong>.</p>
+            <form action="/index.php" method="get">
+                <button type="submit">Suivant</button>
+            </form>
+        </div>
+    <?php elseif ($canProceed): ?>
         <form method="POST" action="">
             <label for="db_host">Hôte MySQL :</label><br>
             <input type="text" id="db_host" name="db_host" value="<?= htmlspecialchars($dbHost ?? '') ?>" placeholder="Ex : localhost ou localhost:3306" required><br><br>
@@ -135,7 +168,7 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
             <label for="db_pass">Mot de passe MySQL :</label><br>
             <input type="password" id="db_pass" name="db_pass" value="<?= htmlspecialchars($dbPass ?? '') ?>"><br><br>
 
-            <button type="submit">Installer</button>
+            <button type="submit">Valider</button>
         </form>
     <?php endif; ?>
 </body>
