@@ -13,6 +13,9 @@ $validationSteps = [
     'Création de l\'utilisateur admin' => 'pending'
 ];
 
+// Initialisation de $canProceed par défaut
+$canProceed = true;
+
 // Vérification des droits d'écriture sur config.php
 $configFile = __DIR__ . '/config.php';
 if (is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile))) {
@@ -31,7 +34,8 @@ foreach ($requiredExtensions as $extension) {
 $canProceed = !in_array('ko', $validationSteps);
 
 // Génération du fichier config.php
-function generateConfigFile($dbHost, $dbUser, $dbPassword, $dbName) {
+function generateConfigFile($dbHost, $dbUser, $dbPassword, $dbName, $dbPort = null) {
+    $portLine = $dbPort ? "define('DB_PORT', '{$dbPort}');\n" : "";
     return <<<PHP
 <?php
 // Fichier généré automatiquement par install.php
@@ -39,8 +43,7 @@ define('DB_HOST', '{$dbHost}');
 define('DB_USER', '{$dbUser}');
 define('DB_PASSWORD', '{$dbPassword}');
 define('DB_NAME', '{$dbName}');
-
-// Autres configurations possibles
+{$portLine}// Autres configurations possibles
 define('APP_DEBUG', false); // Activez true pour le mode débogage
 PHP;
 }
@@ -48,66 +51,24 @@ PHP;
 // Enregistrement sécurisé de config.php
 function saveConfigFile($filePath, $content) {
     if (file_exists($filePath)) {
-        return false; // Ne pas écraser un fichier existant
+        return 'exists'; // Ne pas écraser un fichier existant
     }
-    return file_put_contents($filePath, $content) !== false;
+    return file_put_contents($filePath, $content) !== false ? 'written' : 'error';
 }
 
-// Traiter le formulaire si tout est OK
-if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $dbHost = $_POST['db_host'];
-    $dbName = $_POST['db_name'];
-    $dbUser = $_POST['db_user'];
-    $dbPass = $_POST['db_pass'];
-
-    // Ajouter le port par défaut si non précisé
-    if (!strpos($dbHost, ':')) {
-        $dbHost .= ':3306';
+// Fonction pour afficher les étapes de validation
+function displayValidationSteps($steps) {
+    foreach ($steps as $step => $status) {
+        echo "<li><span class='status-icon'>" .
+             ($status === 'ok' ? '✅' : ($status === 'ko' ? '❌' : '⏳')) .
+             "</span> <span class='status-$status'>" .
+             htmlspecialchars($step) .
+             "</span></li>";
     }
-
-    try {
-        // Étape 1 : Validation du serveur MySQL
-        $pdo = new PDO("mysql:host=$dbHost", $dbUser, $dbPass);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $validationSteps['Validation du serveur MySQL'] = 'ok';
-
-        // Étape 2 : Validation des identifiants MySQL
-        $pdo->exec("USE $dbName");
-        $validationSteps['Validation des identifiants MySQL'] = 'ok';
-
-        // Étape 3 : Enregistrement de config.php
-        $configContent = generateConfigFile($dbHost, $dbUser, $dbPass, $dbName);
-        if (saveConfigFile($configFile, $configContent)) {
-            $validationSteps['Enregistrement de config.php'] = 'ok';
-        } else {
-            $validationSteps['Enregistrement de config.php'] = 'ko';
-            throw new Exception("Impossible d'écrire dans config.php. Vérifiez les droits ou supprimez l'ancien fichier.");
-        }
-
-        // Étape 4 : Création des tables SQL
-        $sql = file_get_contents(__DIR__ . '/install/bdd.sql');
-        $pdo->exec($sql);
-        $validationSteps['Création des tables SQL'] = 'ok';
-
-        // Étape 5 : Création de l'utilisateur admin
-        $passwordHash = password_hash('admin', PASSWORD_BCRYPT);
-        $sqlInsertAdmin = "INSERT INTO users (username, password, role_id) 
-                           VALUES ('admin', :password, (SELECT id FROM roles WHERE role_name = 'admin'))";
-        $stmt = $pdo->prepare($sqlInsertAdmin);
-        $stmt->bindParam(':password', $passwordHash);
-        $stmt->execute();
-        $validationSteps['Création de l\'utilisateur admin'] = 'ok';
-
-        // Tout est OK, afficher le bouton "Suivant"
-        $installationComplete = true;
-
-    } catch (PDOException $e) {
-        $validationSteps['Validation du serveur MySQL'] = 'ko';
-        $error = "Erreur de connexion : " . $e->getMessage();
-    } catch (Exception $e) {
-        $error = $e->getMessage();
-    }
+    ob_flush();
+    flush();
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -129,44 +90,79 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <div>
         <h2>Étapes de validation</h2>
         <ul>
-            <?php foreach ($validationSteps as $step => $status): ?>
-                <li>
-                    <span class="status-icon">
-                        <?= $status === 'ok' ? '✅' : ($status === 'ko' ? '❌' : '⏳') ?>
-                    </span>
-                    <span class="<?= 'status-' . $status ?>">
-                        <?= htmlspecialchars($step) ?>
-                    </span>
-                </li>
-            <?php endforeach; ?>
+            <?php displayValidationSteps($validationSteps); ?>
         </ul>
     </div>
 
-    <?php if (!empty($error)): ?>
-        <p style="color: red;">Erreur : <?= htmlspecialchars($error) ?></p>
-    <?php endif; ?>
+    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+        <?php
+        $dbHost = $_POST['db_host'];
+        $dbName = $_POST['db_name'];
+        $dbUser = $_POST['db_user'];
+        $dbPass = $_POST['db_pass'];
+        $dbPort = !empty($_POST['db_port']) ? $_POST['db_port'] : null;
 
-    <?php if (isset($installationComplete) && $installationComplete): ?>
-        <div>
-            <p style="color: green;">L'installation est terminée avec succès !</p>
-            <p style="color: red;">Pour des raisons de sécurité, supprimez immédiatement le fichier <strong>install.php</strong>.</p>
-            <form action="/index.php" method="get">
-                <button type="submit">Suivant</button>
-            </form>
-        </div>
-    <?php elseif ($canProceed): ?>
+        try {
+            // Étape 1 : Validation du serveur MySQL
+            $pdo = new PDO("mysql:host=$dbHost" . ($dbPort ? ";port=$dbPort" : ""), $dbUser, $dbPass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $validationSteps['Validation du serveur MySQL'] = 'ok';
+            displayValidationSteps($validationSteps);
+
+            // Étape 2 : Validation des identifiants MySQL
+            $pdo->exec("USE $dbName");
+            $validationSteps['Validation des identifiants MySQL'] = 'ok';
+            displayValidationSteps($validationSteps);
+
+            // Étape 3 : Enregistrement de config.php
+            $configContent = generateConfigFile($dbHost, $dbUser, $dbPass, $dbName, $dbPort);
+            $configSaveStatus = saveConfigFile($configFile, $configContent);
+
+            if ($configSaveStatus === 'written' || $configSaveStatus === 'exists') {
+                $validationSteps['Enregistrement de config.php'] = 'ok';
+            } else {
+                $validationSteps['Enregistrement de config.php'] = 'ko';
+                throw new Exception("Impossible d'écrire dans config.php.");
+            }
+            displayValidationSteps($validationSteps);
+
+            // Étape 4 : Création des tables SQL
+            $sql = file_get_contents(__DIR__ . '/install/bdd.sql');
+            $pdo->exec($sql);
+            $validationSteps['Création des tables SQL'] = 'ok';
+            displayValidationSteps($validationSteps);
+
+            // Étape 5 : Création de l'utilisateur admin
+            $passwordHash = password_hash('admin', PASSWORD_BCRYPT);
+            $stmt = $pdo->prepare("INSERT INTO users (username, password, role_id) 
+                                   VALUES ('admin', :password, 
+                                   (SELECT id FROM roles WHERE role_name = 'admin'))");
+            $stmt->bindParam(':password', $passwordHash);
+            $stmt->execute();
+            $validationSteps['Création de l\'utilisateur admin'] = 'ok';
+            displayValidationSteps($validationSteps);
+
+            echo "<p style='color: green;'>Installation réussie !</p>";
+        } catch (Exception $e) {
+            echo "<p style='color: red;'>Erreur : " . htmlspecialchars($e->getMessage()) . "</p>";
+        }
+        ?>
+    <?php else: ?>
         <form method="POST" action="">
             <label for="db_host">Hôte MySQL :</label><br>
-            <input type="text" id="db_host" name="db_host" value="<?= htmlspecialchars($dbHost ?? '') ?>" placeholder="Ex : localhost ou localhost:3306" required><br><br>
+            <input type="text" id="db_host" name="db_host" placeholder="Ex : localhost" required><br><br>
+
+            <label for="db_port">Port MySQL (optionnel) :</label><br>
+            <input type="text" id="db_port" name="db_port" placeholder="Ex : 3306"><br><br>
 
             <label for="db_name">Nom de la base de données :</label><br>
-            <input type="text" id="db_name" name="db_name" value="<?= htmlspecialchars($dbName ?? '') ?>" required><br><br>
+            <input type="text" id="db_name" name="db_name" required><br><br>
 
             <label for="db_user">Utilisateur MySQL :</label><br>
-            <input type="text" id="db_user" name="db_user" value="<?= htmlspecialchars($dbUser ?? '') ?>" required><br><br>
+            <input type="text" id="db_user" name="db_user" required><br><br>
 
             <label for="db_pass">Mot de passe MySQL :</label><br>
-            <input type="password" id="db_pass" name="db_pass" value="<?= htmlspecialchars($dbPass ?? '') ?>"><br><br>
+            <input type="password" id="db_pass" name="db_pass"><br><br>
 
             <button type="submit">Valider</button>
         </form>
