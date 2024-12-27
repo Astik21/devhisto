@@ -1,20 +1,27 @@
+-- Table des rôles
+CREATE TABLE roles (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL,  -- Nom du rôle (en anglais)
+    description VARCHAR(255)         -- Description du rôle
+) ENGINE=InnoDB;
+
 -- Table des utilisateurs
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role_id INT,  -- Référence à la table `roles`
+    role_id INT UNSIGNED,  -- Correspond à `roles.id`
     email VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB;
 
 -- Table des entreprises
 CREATE TABLE entreprises (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom_entreprise VARCHAR(255) NOT NULL
-);
+) ENGINE=InnoDB;
 
 -- Table des devis
 CREATE TABLE devis (
@@ -26,13 +33,13 @@ CREATE TABLE devis (
     status ENUM('pending', 'validated', 'rejected') DEFAULT 'pending',
     FOREIGN KEY (entreprise_id) REFERENCES entreprises(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB;
 
 -- Table des corps d'état
 CREATE TABLE corps_etat (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom_corps_etat VARCHAR(255) NOT NULL  -- Ex : Plâtrerie, Peinture, Plomberie
-);
+) ENGINE=InnoDB;
 
 -- Table des lignes de prix
 CREATE TABLE lignes_prix (
@@ -45,7 +52,7 @@ CREATE TABLE lignes_prix (
     prix_total DECIMAL(10,2),  -- Prix unitaire * Quantité
     FOREIGN KEY (devis_id) REFERENCES devis(id) ON DELETE CASCADE,
     FOREIGN KEY (corps_etat_id) REFERENCES corps_etat(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- Table des ouvrages
 CREATE TABLE ouvrages (
@@ -54,7 +61,7 @@ CREATE TABLE ouvrages (
     type_ouvrage VARCHAR(255),  -- Ex : Douche complète 80x80
     prix_total DECIMAL(10,2),
     FOREIGN KEY (devis_id) REFERENCES devis(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- Table des pièces
 CREATE TABLE pieces (
@@ -63,13 +70,13 @@ CREATE TABLE pieces (
     nom_piece VARCHAR(255),  -- Ex : Salle de bain, Cuisine
     prix_total DECIMAL(10,2),
     FOREIGN KEY (devis_id) REFERENCES devis(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- Table des chantiers
 CREATE TABLE chantiers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     type_chantier VARCHAR(255)  -- Ex : Rénovation complète, Salle de bain
-);
+) ENGINE=InnoDB;
 
 -- Table des détails des chantiers
 CREATE TABLE chantiers_detail (
@@ -81,7 +88,7 @@ CREATE TABLE chantiers_detail (
     pieces_refaites TEXT,  -- Liste des pièces refaites
     FOREIGN KEY (chantier_id) REFERENCES chantiers(id) ON DELETE CASCADE,
     FOREIGN KEY (entreprise_id) REFERENCES entreprises(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB;
 
 -- Table des logs (actions effectuées sur les devis)
 CREATE TABLE logs (
@@ -91,7 +98,7 @@ CREATE TABLE logs (
     details TEXT,  -- Détails de l'action effectuée
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
-);
+) ENGINE=InnoDB;
 
 -- Table des fichiers (PDF associés aux devis)
 CREATE TABLE files (
@@ -103,14 +110,7 @@ CREATE TABLE files (
     status ENUM('pending', 'validated', 'error') DEFAULT 'pending',  -- Statut du fichier
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (devis_id) REFERENCES devis(id) ON DELETE CASCADE
-);
-
--- Table des rôles (admin, manager, user)
-CREATE TABLE roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    role_name VARCHAR(50) NOT NULL,  -- Nom du rôle (en anglais)
-    description VARCHAR(255)         -- Description du rôle
-);
+) ENGINE=InnoDB;
 
 -- Insérer les rôles dans la table
 INSERT INTO roles (role_name, description) VALUES 
