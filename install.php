@@ -1,49 +1,73 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Récupérer les données du formulaire
+// Vérification des extensions PHP nécessaires
+function checkExtensions($requiredExtensions) {
+    $results = [];
+    foreach ($requiredExtensions as $extension) {
+        $results[$extension] = extension_loaded($extension) ? 'ok' : 'ko';
+    }
+    return $results;
+}
+
+// Initialisation des contrôles
+$checks = [];
+
+// Vérification des droits d'écriture sur config.php
+$configFile = __DIR__ . '/config.php';
+$canWriteConfig = is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile));
+$checks['Droits en écriture (config.php)'] = $canWriteConfig ? 'ok' : 'ko';
+
+// Vérification des extensions PHP nécessaires
+$requiredExtensions = ['pdo_mysql', 'mbstring', 'json', 'ctype'];
+$extensionResults = checkExtensions($requiredExtensions);
+$checks['Extensions PHP'] = $extensionResults;
+
+// Vérifier si tout est OK
+$canProceed = $checks['Droits en écriture (config.php)'] === 'ok' && !in_array('ko', $extensionResults);
+
+// Traiter le formulaire si tout est OK
+if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $dbHost = $_POST['db_host'];
     $dbName = $_POST['db_name'];
     $dbUser = $_POST['db_user'];
     $dbPass = $_POST['db_pass'];
 
-    // Ajouter le port par défaut (3306) si non précisé dans le nom de serveur
+    // Ajouter le port par défaut si non précisé
     if (!strpos($dbHost, ':')) {
         $dbHost .= ':3306';
     }
 
-    // Vérifier si le fichier .env est accessible en écriture
-    $envFile = __DIR__ . '/.env';
-    if (!is_writable(__DIR__) || (file_exists($envFile) && !is_writable($envFile))) {
-        $error = "Erreur : le fichier .env n'est pas accessible en écriture. Veuillez vérifier les permissions.";
-    } else {
-        // Tester la connexion à la base de données
-        try {
-            $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    try {
+        // Tester la connexion à MySQL
+        $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // Connexion réussie, enregistrer les informations dans le fichier .env
-            $envContent = "DB_HOST=$dbHost\nDB_NAME=$dbName\nDB_USER=$dbUser\nDB_PASS=$dbPass\n";
-            file_put_contents($envFile, $envContent);
+        // Générer le fichier config.php avec les informations
+        $configContent = "<?php\n\nreturn [\n" .
+                         "    'DB_HOST' => '$dbHost',\n" .
+                         "    'DB_NAME' => '$dbName',\n" .
+                         "    'DB_USER' => '$dbUser',\n" .
+                         "    'DB_PASS' => '$dbPass',\n" .
+                         "];\n";
+        file_put_contents($configFile, $configContent);
 
-            // Charger le fichier SQL pour créer la base de données
-            $sql = file_get_contents(__DIR__ . '/install/bdd.sql');
-            $pdo->exec($sql);
+        // Exécuter le script SQL
+        $sql = file_get_contents(__DIR__ . '/install/bdd.sql');
+        $pdo->exec($sql);
 
-            // Créer un utilisateur admin
-            $passwordHash = password_hash('admin', PASSWORD_BCRYPT);
-            $sqlInsertAdmin = "INSERT INTO users (username, password, role_id) 
-                               VALUES ('admin', :password, (SELECT id FROM roles WHERE role_name = 'admin'))";
-            $stmt = $pdo->prepare($sqlInsertAdmin);
-            $stmt->bindParam(':password', $passwordHash);
-            $stmt->execute();
+        // Créer l'utilisateur admin
+        $passwordHash = password_hash('admin', PASSWORD_BCRYPT);
+        $sqlInsertAdmin = "INSERT INTO users (username, password, role_id) 
+                           VALUES ('admin', :password, (SELECT id FROM roles WHERE role_name = 'admin'))";
+        $stmt = $pdo->prepare($sqlInsertAdmin);
+        $stmt->bindParam(':password', $passwordHash);
+        $stmt->execute();
 
-            // Rediriger vers la page d'accueil
-            header("Location: /index.php");
-            exit;
+        // Rediriger vers la page de connexion
+        header("Location: /index.php");
+        exit;
 
-        } catch (PDOException $e) {
-            $error = "Erreur de connexion : " . $e->getMessage();
-        }
+    } catch (PDOException $e) {
+        $error = "Erreur de connexion : " . $e->getMessage();
     }
 }
 ?>
@@ -54,26 +78,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installation</title>
+    <style>
+        .status-ok { color: green; font-weight: bold; }
+        .status-ko { color: red; font-weight: bold; }
+        .status-icon { font-size: 1.2em; }
+    </style>
 </head>
 <body>
     <h1>Installation de l'outil</h1>
-    <?php if (!empty($error)) : ?>
-        <p style="color: red;"><?= htmlspecialchars($error) ?></p>
+    
+    <div>
+        <h2>Étapes de contrôle</h2>
+        <ul>
+            <!-- Vérification des droits d'écriture -->
+            <li>
+                <span class="status-icon">
+                    <?= $checks['Droits en écriture (config.php)'] === 'ok' ? '✅' : '❌' ?>
+                </span>
+                <span class="<?= $checks['Droits en écriture (config.php)'] === 'ok' ? 'status-ok' : 'status-ko' ?>">
+                    Droits en écriture (config.php)
+                </span>
+            </li>
+
+            <!-- Vérification des extensions PHP -->
+            <li>
+                <span>Extensions PHP :</span>
+                <ul>
+                    <?php foreach ($checks['Extensions PHP'] as $extension => $result): ?>
+                        <li>
+                            <span class="status-icon">
+                                <?= $result === 'ok' ? '✅' : '❌' ?>
+                            </span>
+                            <span class="<?= $result === 'ok' ? 'status-ok' : 'status-ko' ?>">
+                                <?= htmlspecialchars($extension) ?>
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <?php if (!$canProceed): ?>
+        <p style="color: red;">Veuillez corriger les erreurs ci-dessus et recharger la page pour continuer.</p>
+    <?php else: ?>
+        <form method="POST" action="">
+            <label for="db_host">Hôte MySQL :</label><br>
+            <input type="text" id="db_host" name="db_host" value="<?= htmlspecialchars($dbHost ?? '') ?>" placeholder="Ex : localhost ou localhost:3306" required><br><br>
+
+            <label for="db_name">Nom de la base de données :</label><br>
+            <input type="text" id="db_name" name="db_name" value="<?= htmlspecialchars($dbName ?? '') ?>" required><br><br>
+
+            <label for="db_user">Utilisateur MySQL :</label><br>
+            <input type="text" id="db_user" name="db_user" value="<?= htmlspecialchars($dbUser ?? '') ?>" required><br><br>
+
+            <label for="db_pass">Mot de passe MySQL :</label><br>
+            <input type="password" id="db_pass" name="db_pass" value="<?= htmlspecialchars($dbPass ?? '') ?>"><br><br>
+
+            <button type="submit">Installer</button>
+        </form>
     <?php endif; ?>
-    <form method="POST" action="">
-        <label for="db_host">Hôte MySQL :</label><br>
-        <input type="text" id="db_host" name="db_host" value="<?= htmlspecialchars($dbHost ?? '') ?>" placeholder="Ex : localhost ou localhost:3306" required><br><br>
-
-        <label for="db_name">Nom de la base de données :</label><br>
-        <input type="text" id="db_name" name="db_name" value="<?= htmlspecialchars($dbName ?? '') ?>" required><br><br>
-
-        <label for="db_user">Utilisateur MySQL :</label><br>
-        <input type="text" id="db_user" name="db_user" value="<?= htmlspecialchars($dbUser ?? '') ?>" required><br><br>
-
-        <label for="db_pass">Mot de passe MySQL :</label><br>
-        <input type="password" id="db_pass" name="db_pass" value="<?= htmlspecialchars($dbPass ?? '') ?>"><br><br>
-
-        <button type="submit">Installer</button>
-    </form>
 </body>
 </html>
