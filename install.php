@@ -14,7 +14,7 @@ $checks = [];
 // Vérification des droits d'écriture sur config.php
 $configFile = __DIR__ . '/config.php';
 $canWriteConfig = is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile));
-$checks['Droits en écriture (config.php)'] = $canWriteConfig ? 'ok' : 'ko';
+$checks['write'] = $canWriteConfig ? 'ok' : 'ko';
 
 // Vérification des extensions PHP nécessaires
 $requiredExtensions = ['pdo_mysql', 'mbstring', 'json', 'ctype'];
@@ -22,7 +22,7 @@ $extensionResults = checkExtensions($requiredExtensions);
 $checks['Extensions PHP'] = $extensionResults;
 
 // Vérifier si tout est OK
-$canProceed = $checks['Droits en écriture (config.php)'] === 'ok' && !in_array('ko', $extensionResults);
+$canProceed = $checks['write'] === 'ok' && !in_array('ko', $extensionResults);
 
 // Traiter le formulaire si tout est OK
 if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -93,10 +93,10 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Vérification des droits d'écriture -->
             <li>
                 <span class="status-icon">
-                    <?= $checks['Droits en écriture (config.php)'] === 'ok' ? '✅' : '❌' ?>
+                    <?= $checks['write'] === 'ok' ? '✅' : '❌' ?>
                 </span>
-                <span class="<?= $checks['Droits en écriture (config.php)'] === 'ok' ? 'status-ok' : 'status-ko' ?>">
-                    Droits en écriture (config.php)
+                <span class="<?= $checks['write'] === 'ok' ? 'status-ok' : 'status-ko' ?>">
+                    Droits en écriture
                 </span>
             </li>
 
