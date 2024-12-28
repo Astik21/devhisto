@@ -1,44 +1,62 @@
 ﻿<?php
 session_start();
 
-// Vérifier si l'utilisateur est connecté
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
+// === Variables à renseigner === //
+$githubZipUrl = "https://github.com/astik21/devhisto/releases/devhisto_v0.1.zip";
+$destinationDir = __DIR__ . '/tmp';
+$rootDir = __DIR__;
+
+// === Fonction pour téléchargement et extraction === //
+function downloadAndExtractFromGitHub($githubZipUrl, $destinationDir, $rootDir) {
+    $status = [];
+
+    // Téléchargement du fichier ZIP
+    $zipFile = $destinationDir . '/devhisto.zip';
+    $status[] = "Téléchargement en cours...";
+    if (!file_put_contents($zipFile, file_get_contents($githubZipUrl))) {
+        $status[] = "Erreur : Impossible de télécharger les fichiers depuis GitHub.";
+        return $status;
+    }
+    $status[] = "Fichier téléchargé avec succès.";
+
+    // Extraction du fichier ZIP
+    $status[] = "Extraction des fichiers en cours...";
+    $zip = new ZipArchive();
+    if ($zip->open($zipFile) === TRUE) {
+        $zip->extractTo($rootDir);
+        $zip->close();
+        $status[] = "Fichiers extraits avec succès à la racine du serveur.";
+    } else {
+        $status[] = "Erreur : Impossible d'extraire les fichiers ZIP.";
+        unlink($zipFile);
+        return $status;
+    }
+
+    // Suppression du fichier ZIP temporaire
+    unlink($zipFile);
+    $status[] = "Fichier ZIP temporaire supprimé.";
+
+    return $status;
 }
 
-// Charger la configuration
-if (!file_exists('config.php')) {
-    die('Erreur : Le fichier de configuration est manquant.');
-}
-require_once 'config.php';
+// === Exécution === //
+$steps = [];
 
-// Connexion à la base de données
-try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASSWORD,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"
-        ]
-    );
-} catch (PDOException $e) {
-    die('Erreur : Impossible de se connecter à la base de données. ' . $e->getMessage());
+// Création du répertoire temporaire si nécessaire
+if (!is_dir($destinationDir)) {
+    mkdir($destinationDir, 0777, true);
+    $steps[] = "Répertoire temporaire créé.";
+} else {
+    $steps[] = "Répertoire temporaire déjà existant.";
 }
 
-// Gestion des pages
-$page = $_GET['page'] ?? 'home';
+// Téléchargement et extraction
+$steps = array_merge($steps, downloadAndExtractFromGitHub($githubZipUrl, $destinationDir, $rootDir));
 
-// Charger les informations utilisateur
-$stmt = $pdo->prepare("SELECT username FROM users WHERE id = :id");
-$stmt->execute(['id' => $_SESSION['user_id']]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$user) {
-    session_destroy();
-    header('Location: login.php');
+// Redirection vers la page install.php si tout est OK
+if (end($steps) === "Fichier ZIP temporaire supprimé.") {
+    $steps[] = "Redirection vers la page install.php...";
+    header("Location: install.php");
     exit;
 }
 ?>
@@ -47,61 +65,17 @@ if (!$user) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord - DevHisto</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="dashboard.js" defer></script>
+    <title>Installation</title>
 </head>
 <body>
-    <header>
-        <h1>Bienvenue, <?= htmlspecialchars($user['username']) ?> !</h1>
-        <nav>
-            <ul>
-                <li><a href="index.php?page=home">Accueil</a></li>
-                <li><a href="index.php?page=add">Ajouter un devis</a></li>
-                <li><a href="index.php?page=view">Consulter les devis</a></li>
-                <li><a href="index.php?page=stats">Statistiques</a></li>
-                <li><a href="login.php?logout=true">Déconnexion</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main id="main-content">
-        <?php
-        switch ($page) {
-            case 'home':
-                echo "<h2>Accueil</h2>";
-                echo "<p>Bienvenue sur DevHisto ! Utilisez le menu ci-dessus pour naviguer entre les sections.</p>";
-                break;
-
-            case 'add':
-                echo "<h2>Ajouter un devis</h2>";
-                echo '<form>
-                        <label for="description">Description :</label>
-                        <input type="text" id="description" name="description" required><br>
-                        <label for="amount">Montant :</label>
-                        <input type="number" id="amount" name="amount" required><br>
-                        <button type="submit">Ajouter</button>
-                      </form>';
-                break;
-
-            case 'view':
-                echo "<h2>Consulter les devis</h2>";
-                echo "<p>Liste des devis à venir.</p>";
-                break;
-
-            case 'stats':
-                echo "<h2>Statistiques</h2>";
-                echo "<p>Statistiques et visualisation des données.</p>";
-                break;
-
-            default:
-                echo "<h2>Page introuvable</h2>";
-                echo "<p>La page demandée n'existe pas.</p>";
-                break;
-        }
-        ?>
-    </main>
-    <footer>
-        <p>&copy; <?= date('Y') ?> DevHisto. Tous droits réservés.</p>
-    </footer>
+    <h1>Installation de l'outil</h1>
+    <div id="status-container">
+        <h2>Étapes de l'installation</h2>
+        <ul>
+            <?php foreach ($steps as $step): ?>
+                <li><?= htmlspecialchars($step) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
 </body>
 </html>
