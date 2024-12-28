@@ -11,7 +11,8 @@ $validationSteps = [
     'Validation des identifiants SQL' => 'pending',
     'Enregistrement de config.php' => 'pending',
     'Création des tables SQL' => 'pending',
-    'Création de l\'utilisateur admin' => 'pending'
+    'Création de l\'utilisateur admin' => 'pending',
+    'Supprimer le répertoire install' => 'pending'
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </ul>
     </div>
     <div id="form-container" style="display:none;">
+        <h2>Configurer la base de données</h2>
         <form id="installation-form">
             <label for="db_host">Hôte MySQL :</label>
             <input type="text" id="db_host" name="db_host" placeholder="localhost" required><br>
@@ -51,8 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="db_user" name="db_user" required><br>
             <label for="db_pass">Mot de passe MySQL :</label>
             <input type="password" id="db_pass" name="db_pass"><br>
-            <button type="button" id="start-installation">Lancer l'installation</button>
+            <button type="button" id="submit-sql">Tester la connexion</button>
         </form>
     </div>
+    <div id="next-step" style="display:none; margin-top: 20px;"></div>
 </body>
 </html>

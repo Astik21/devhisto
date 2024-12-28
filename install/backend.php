@@ -20,16 +20,37 @@ try {
 
         // Vérification des extensions PHP
         case 'Extensions PHP (pdo_mysql)':
-        case 'Extensions PHP (mbstring)':
-        case 'Extensions PHP (json)':
-        case 'Extensions PHP (ctype)':
-            $extension = strtolower(explode(' ', $step)[2]); // Extrait l'extension depuis le nom de l'étape
-            if (extension_loaded($extension)) {
+            if (extension_loaded('pdo_mysql')) {
                 echo json_encode(['status' => 'ok']);
             } else {
-                echo json_encode(['status' => 'ko', 'message' => "Extension PHP $extension manquante."]);
+                echo json_encode(['status' => 'ko', 'message' => 'Extension PHP `pdo_mysql` non détectée.']);
             }
             break;
+
+        case 'Extensions PHP (mbstring)':
+            if (extension_loaded('mbstring')) {
+                echo json_encode(['status' => 'ok']);
+            } else {
+                echo json_encode(['status' => 'ko', 'message' => 'Extension PHP `mbstring` non détectée.']);
+            }
+            break;
+
+        case 'Extensions PHP (json)':
+            if (extension_loaded('json')) {
+                echo json_encode(['status' => 'ok']);
+            } else {
+                echo json_encode(['status' => 'ko', 'message' => 'Extension PHP `json` non détectée.']);
+            }
+            break;
+
+        case 'Extensions PHP (ctype)':
+            if (extension_loaded('ctype')) {
+                echo json_encode(['status' => 'ok']);
+            } else {
+                echo json_encode(['status' => 'ko', 'message' => 'Extension PHP `ctype` non détectée.']);
+            }
+            break;
+
 
         // Validation de la connexion au serveur SQL
         case 'Connexion au serveur SQL':
@@ -98,6 +119,23 @@ PHP;
                 echo json_encode(['status' => 'ko', 'message' => 'Création de l\'utilisateur admin échouée : ' . $e->getMessage()]);
             }
             break;
+
+        // Suppression du répertoire install
+        case 'Supprimer le répertoire install':
+            $installDir = __DIR__;
+            try {
+                $files = array_diff(scandir($installDir), ['.', '..']);
+                foreach ($files as $file) {
+                    $filePath = $installDir . DIRECTORY_SEPARATOR . $file;
+                    is_dir($filePath) ? rmdir($filePath) : unlink($filePath);
+                }
+                rmdir($installDir);
+                echo json_encode(['status' => 'ok']);
+            } catch (Exception $e) {
+                echo json_encode(['status' => 'ko', 'message' => 'Erreur lors de la suppression : ' . $e->getMessage()]);
+            }
+            break;
+
 
         default:
             echo json_encode(['status' => 'ko', 'message' => 'Étape inconnue.']);

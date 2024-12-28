@@ -74,3 +74,39 @@ button {
     button:hover {
         background-color: #0056b3;
     }
+
+#next-step {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #333;
+    text-align: center;
+}
+
+.final-message {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+#next-step button {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+    #next-step button:hover {
+        background-color: #0056b3;
+    }
+
+.final-message code {
+    background-color: #f8d7da;
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: #d9534f;
+    font-weight: bold;
+}
