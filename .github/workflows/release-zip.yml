@@ -4,10 +4,6 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: write
-  releases: write
-
 jobs:
   build-and-zip:
     runs-on: ubuntu-latest
