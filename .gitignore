@@ -32,6 +32,6 @@ yarn-error.log
 *.swo
 *.bak
 *.orig
-/.vs/
+/.vs/*
 /public/CopieServeur - Lanceur.lnk
 /public/CopieServeur.ps1
