@@ -35,3 +35,4 @@ yarn-error.log
 /.vs/*
 /public/CopieServeur - Lanceur.lnk
 /public/CopieServeur.ps1
+/public/config.php
