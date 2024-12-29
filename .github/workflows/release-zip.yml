@@ -2,7 +2,7 @@ name: Create Release ZIP
 
 on:
   release:
-    types: [published] # L'action se déclenche uniquement lors de la publication d'une release
+    types: [published]
 
 permissions:
   contents: write
@@ -17,6 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Debug : Afficher les variables pour vérifier le GITHUB_TOKEN
+      - name: Debug GITHUB_TOKEN
+        run: |
+          echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+          echo "Release upload URL: ${{ github.event.release.upload_url }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Installer l'outil zip
       - name: Install zip
         run: sudo apt-get install -y zip
@@ -25,7 +33,7 @@ jobs:
       - name: Create ZIP excluding setup.php
         run: |
           mkdir -p dist
-          VERSION=${{ github.event.release.tag_name }} # Utilise le numéro de version depuis la release
+          VERSION=${{ github.event.release.tag_name }}
           zip -r ./dist/release-${VERSION}.zip public -x "public/setup.php"
 
       # Joindre le fichier ZIP à la release
