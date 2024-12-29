@@ -35,11 +35,10 @@ yarn-error.log
 .vs/
 *.lnk
 *.ps1
-/public/config.php
+/app/private/config/config.php
 
 
 /releases
 /uploads
 /logs
 /arborescence.txt
-/app/private/config/config.php

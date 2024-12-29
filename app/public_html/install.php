@@ -11,8 +11,8 @@ require_once __DIR__ . '/install/steps.php';
     <script>
         const stepDisplayNames = <?= json_encode(array_combine(array_keys($stepDisplayNames), array_column($stepDisplayNames, 'label'))) ?>;
     </script>
-    <link rel="stylesheet" href="install/install.css">
-    <script src="install/install.js" defer></script>
+    <link rel="stylesheet" href="/install/install.css">
+    <script src="/install/install.js" defer></script>
 
 </head>
 <body>

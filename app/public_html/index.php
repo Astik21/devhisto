@@ -8,10 +8,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Charger la configuration
-if (!file_exists('config.php')) {
+$configFile = __DIR__ . '/../private/config/config.php';
+if (!file_exists($configFile)) {
     die('Erreur : Le fichier de configuration est manquant.');
 }
-require_once __DIR__ . '/config.php';
+require_once $configFile;
 
 // Connexion à la base de données
 try {
@@ -37,7 +38,6 @@ if (!file_exists($pageFile)) {
     $page = '404';
     $pageFile = __DIR__ . "/pages/404.php";
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -62,21 +62,7 @@ if (!file_exists($pageFile)) {
         </nav>
     </header>
     <main>
-        <?php
-        // Répertoire contenant les fichiers autorisés
-        $allowedDirectory = __DIR__ . '/pages';
-
-        // Nettoyage du chemin fourni
-        $pageFile = realpath($allowedDirectory . '/' . basename($pageFile));
-
-        // Vérification : est-ce que le fichier existe et est dans le répertoire autorisé ?
-        if ($pageFile && strpos($pageFile, $allowedDirectory) === 0 && file_exists($pageFile)) {
-            include $pageFile;
-        } else {
-            // Option : afficher une page 404 ou un message d'erreur
-            include __DIR__ . '/pages/404.php';
-        }
-        ?>
+        <?php include $pageFile; ?>
     </main>
     <footer>
         <p>&copy; <?= date('Y') ?> DevHisto. Tous droits réservés.</p>

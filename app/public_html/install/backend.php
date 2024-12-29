@@ -11,7 +11,7 @@ try {
     switch ($step) {
         // Vérification des droits en écriture
         case 'check_write_permissions':
-            $configFile = __DIR__ . '/../config.php';
+            $configFile = __DIR__ . '/../../private/config/config.php';
             if (is_writable(__DIR__) && (!file_exists($configFile) || is_writable($configFile))) {
                 echo json_encode(['status' => 'ok', 'displayName' => $stepDisplayNames[$step]['label']]);
             } else {
@@ -138,7 +138,7 @@ define('DB_USER', '{$formData['db_user']}');
 define('DB_PASSWORD', '{$formData['db_pass']}');
 PHP;
             try {
-                $configFile = __DIR__ . '/../config.php';
+                $configFile = __DIR__ . '/../../private/config/config.php';
                 if (file_put_contents($configFile, $configContent)) {
                     echo json_encode(['status' => 'ok', 'displayName' => $stepDisplayNames[$step]['label']]);
                 } else {
