@@ -1,5 +1,6 @@
 {
     "name": "astik21/devhisto",
+    "description": "Projet de gestion de l'historique des devis",
     "license": "MIT",
     "autoload": {
         "psr-4": {
