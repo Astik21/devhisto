@@ -232,6 +232,7 @@ PHP;
         case 'remove_install_directory':
             $installDir = __DIR__; // Répertoire actuel (install/)
             $rootInstallFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'install.php'; // Fichier install.php à la racine
+            $rootSetupFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'setup.php'; // Fichier setup.php à la racine
 
             try {
                 // Supprimer les fichiers et répertoires dans install/
@@ -245,6 +246,11 @@ PHP;
                 // Supprimer install.php à la racine
                 if (file_exists($rootInstallFile)) {
                     unlink($rootInstallFile);
+                }
+
+                // Supprimer setup.php à la racine
+                if (file_exists($rootSetupFile)) {
+                    unlink($rootSetupFile);
                 }
 
                 echo json_encode(['status' => 'ok', 'displayName' => $stepDisplayNames[$step]['label']]);

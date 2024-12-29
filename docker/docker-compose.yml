@@ -4,12 +4,11 @@ services:
     container_name: devhisto-nginx
     ports:
       - "8085:8080"
-      - "9445:8443"
+      - "9445:445"
     volumes:
-      - ${NGINX_CONFIG_PATH}/server_blocks:/opt/bitnami/nginx/conf/server_blocks
-      - ${NGINX_CONFIG_PATH}/vhosts:/opt/bitnami/nginx/conf/vhosts
-      - ${PUBLIC_HTML_PATH}:/app
-      - ${LOGS_PATH}/nginx:/opt/bitnami/nginx/logs
+      - ${GLOBAL_PATH}/nginx/config/server_blocks:/opt/bitnami/nginx/conf/server_blocks
+      - ${GLOBAL_PATH}/app/public_html:/opt/bitnami/nginx/html
+      - ${GLOBAL_PATH}/logs/nginx:/opt/bitnami/nginx/logs
     depends_on:
       - phpfpm
     environment:
@@ -22,8 +21,9 @@ services:
     image: bitnami/php-fpm:8.2
     container_name: devhisto-phpfpm
     volumes:
-      - ${PUBLIC_HTML_PATH}:/app
-      - ${LOGS_PATH}/php:/opt/bitnami/php/logs
+      - ${GLOBAL_PATH}/app/public_html:/opt/bitnami/nginx/html
+      - ${GLOBAL_PATH}/app/private:/app/private
+      - ${GLOBAL_PATH}/logs/php:/opt/bitnami/php/logs
     environment:
       - BITNAMI_DEBUG=true
       - PHP_MAX_INPUT_TIME=300
@@ -36,14 +36,14 @@ services:
     image: python:3.9-slim
     container_name: devhisto-inference
     volumes:
-      - ${INFERENCE_PATH}:/app
+      - ${GLOBAL_PATH}/app/private/inference:/app
     working_dir: /app
     command: ["sh", "-c", "pip install -r requirements.txt && python app.py"]
     networks:
       - devhisto_network
     ports:
       - "5010:5000"
-      
+
 networks:
   devhisto_network:
     driver: bridge

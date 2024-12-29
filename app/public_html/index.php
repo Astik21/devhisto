@@ -1,18 +1,11 @@
 ﻿<?php
 session_start();
 
-// Vérifier si l'utilisateur est connecté
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
 // Charger la configuration
-$configFile = __DIR__ . '/../private/config/config.php';
-if (!file_exists($configFile)) {
+if (!file_exists('config.php')) {
     die('Erreur : Le fichier de configuration est manquant.');
 }
-require_once $configFile;
+require_once 'config.php';
 
 // Connexion à la base de données
 try {
@@ -22,50 +15,26 @@ try {
         DB_PASSWORD,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         ]
     );
 } catch (PDOException $e) {
-    die('Erreur : Impossible de se connecter à la base de données. ' . $e->getMessage());
+    die('Erreur : Connexion à la base de données échouée. ' . $e->getMessage());
 }
 
-// Déterminer la page à charger
-$page = $_GET['page'] ?? 'home';
+// Gestion de la page demandée
+$page = isset($_GET['page']) ? $_GET['page'] : 'home';
 
-// Vérifier si le fichier correspondant existe
-$pageFile = __DIR__ . "/pages/{$page}.php";
-if (!file_exists($pageFile)) {
-    $page = '404';
-    $pageFile = __DIR__ . "/pages/404.php";
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ?page=login');
+    exit;
 }
-?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord - DevHisto</title>
-    <link rel="stylesheet" href="/assets/styles.css">
-    <script src="/assets/dashboard.js" defer></script>
-</head>
-<body>
-    <header>
-        <h1>Bienvenue sur DevHisto</h1>
-        <nav>
-            <ul>
-                <li><a href="index.php?page=home">Accueil</a></li>
-                <li><a href="index.php?page=add">Ajouter un devis</a></li>
-                <li><a href="index.php?page=view">Consulter les devis</a></li>
-                <li><a href="index.php?page=stats">Statistiques</a></li>
-                <li><a href="login.php?logout=true">Déconnexion</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <?php include $pageFile; ?>
-    </main>
-    <footer>
-        <p>&copy; <?= date('Y') ?> DevHisto. Tous droits réservés.</p>
-    </footer>
-</body>
-</html>
+
+// Charger les pages dynamiquement
+$pagePath = "pages/$page.php";
+if (file_exists($pagePath)) {
+    require $pagePath;
+} else {
+    require 'pages/404.php';
+}
