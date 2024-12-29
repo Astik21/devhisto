@@ -1,0 +1,49 @@
+services:
+  nginx:
+    image: bitnami/nginx:latest
+    container_name: devhisto-nginx
+    ports:
+      - "8085:8080"
+      - "9445:8443"
+    volumes:
+      - ${NGINX_CONFIG_PATH}/server_blocks:/opt/bitnami/nginx/conf/server_blocks
+      - ${NGINX_CONFIG_PATH}/vhosts:/opt/bitnami/nginx/conf/vhosts
+      - ${PUBLIC_HTML_PATH}:/app
+      - ${LOGS_PATH}/nginx:/opt/bitnami/nginx/logs
+    depends_on:
+      - phpfpm
+    environment:
+      - NGINX_PORT_NUMBER=8080
+    restart: always
+    networks:
+      - devhisto_network
+
+  phpfpm:
+    image: bitnami/php-fpm:8.2
+    container_name: devhisto-phpfpm
+    volumes:
+      - ${PUBLIC_HTML_PATH}:/app
+      - ${LOGS_PATH}/php:/opt/bitnami/php/logs
+    environment:
+      - BITNAMI_DEBUG=true
+      - PHP_MAX_INPUT_TIME=300
+      - PHP_MAX_EXECUTION_TIME=300
+    restart: always
+    networks:
+      - devhisto_network
+
+  inference:
+    image: python:3.9-slim
+    container_name: devhisto-inference
+    volumes:
+      - ${INFERENCE_PATH}:/app
+    working_dir: /app
+    command: ["sh", "-c", "pip install -r requirements.txt && python app.py"]
+    networks:
+      - devhisto_network
+    ports:
+      - "5010:5000"
+      
+networks:
+  devhisto_network:
+    driver: bridge
