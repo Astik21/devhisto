@@ -1,28 +1,40 @@
 ﻿<?php
+require_once __DIR__ . '/../vendor/autoload.php'; // Autoload de Composer
+
+use Smalot\PdfParser\Parser;
+
+$error = '';
+$extractedData = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['pdf_file'])) {
     $uploadDir = __DIR__ . '/../uploads/';
-    $uploadFile = $uploadDir . basename($_FILES['pdf_file']['name']);
-    $error = '';
-    $success = '';
+    $pdfPath = $uploadDir . basename($_FILES['pdf_file']['name']);
 
-    // Validation du fichier
+    // Validation du fichier et téléchargement
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
     if ($_FILES['pdf_file']['type'] !== 'application/pdf') {
         $error = "Le fichier doit être au format PDF.";
-    } elseif (!move_uploaded_file($_FILES['pdf_file']['tmp_name'], $uploadFile)) {
+    } elseif (!move_uploaded_file($_FILES['pdf_file']['tmp_name'], $pdfPath)) {
         $error = "Erreur lors du téléchargement du fichier.";
     } else {
-        // Appeler le script OCR pour extraire les données
-        $output = shell_exec("tesseract " . escapeshellarg($uploadFile) . " stdout");
-        $extractedData = $output ? nl2br(htmlspecialchars($output)) : "Aucune donnée détectée dans le fichier.";
+        // Analyser le PDF
+        try {
+            $parser = new Parser();
+            $pdf = $parser->parseFile($pdfPath);
+            $extractedData = $pdf->getText();
+            if (empty(trim($extractedData))) {
+                $error = "Aucune donnée valide n'a pu être extraite du fichier PDF.";
+            }
+        } catch (Exception $e) {
+            $error = "Erreur lors de l'analyse du fichier : " . $e->getMessage();
+        }
 
-        // Sauvegarder le chemin du fichier pour validation ultérieure
-        $_SESSION['uploaded_pdf'] = $uploadFile;
+        // Supprimer le fichier PDF après traitement
+        unlink($pdfPath);
     }
 }
-
 ?>
 <h2>Ajouter un devis</h2>
 <?php if (!empty($error)): ?>
@@ -30,9 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['pdf_file'])) {
 <?php endif; ?>
 <?php if (!empty($extractedData)): ?>
     <h3>Contenu extrait :</h3>
-    <div class="ocr-output"><?= $extractedData ?></div>
     <form method="POST" action="index.php?page=validate">
-        <input type="hidden" name="pdf_path" value="<?= htmlspecialchars($_SESSION['uploaded_pdf']) ?>">
+        <label for="description">Description :</label>
+        <textarea id="description" name="description" rows="10" cols="50" required><?= htmlspecialchars($extractedData) ?></textarea><br>
+        <label for="amount">Montant (€) :</label>
+        <input type="number" id="amount" name="amount" step="0.01" required><br>
+        <label for="date">Date :</label>
+        <input type="date" id="date" name="date" value="<?= date('Y-m-d') ?>" required><br>
         <button type="submit">Valider les données</button>
     </form>
 <?php else: ?>
