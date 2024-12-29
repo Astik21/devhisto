@@ -2,7 +2,7 @@
 session_start();
 
 // === Variables à renseigner === //
-$githubZipUrl = "https://github.com/Astik21/devhisto/raw/main/releases/devhisto_v0.2.zip";
+$githubZipUrl = "https://github.com/Astik21/devhisto/raw/main/releases/devhisto_v0.3.zip";
 $rootDir = __DIR__;
 
 // === Fonction pour téléchargement et extraction === //
