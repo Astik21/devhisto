@@ -1,25 +1,6 @@
 <?php
 session_start();
-
-$validationSteps = [
-    'Droits en écriture (config.php)' => 'pending',
-    'Extensions PHP (pdo_mysql)' => 'pending',
-    'Extensions PHP (mbstring)' => 'pending',
-    'Extensions PHP (json)' => 'pending',
-    'Extensions PHP (ctype)' => 'pending',
-    'Connexion au serveur SQL' => 'pending',
-    'Validation des identifiants SQL' => 'pending',
-    'Enregistrement de config.php' => 'pending',
-    'Création des tables SQL' => 'pending',
-    'Création de l\'utilisateur admin' => 'pending',
-    'Supprimer le répertoire install' => 'pending'
-];
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-    require_once __DIR__ . '/install/backend.php';
-    exit;
-}
+require_once __DIR__ . '/install/steps.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -27,19 +8,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installation</title>
+    <script>
+        const stepDisplayNames = <?= json_encode(array_combine(array_keys($stepDisplayNames), array_column($stepDisplayNames, 'label'))) ?>;
+    </script>
     <link rel="stylesheet" href="install/install.css">
     <script src="install/install.js" defer></script>
+
 </head>
 <body>
-    <h1>Installation de l'outil</h1>
-    <div id="validation-container">
-        <h2>Étapes de validation</h2>
-        <ul id="validation-steps">
-            <?php foreach ($validationSteps as $step => $status): ?>
-                <li data-step="<?= htmlspecialchars($step) ?>" class="status-pending"><?= $step ?></li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
+    <h1>Installation de DevHisto</h1>
+
+    <!-- Formulaire SQL (masqué par défaut) -->
     <div id="form-container" style="display:none;">
         <h2>Configurer la base de données</h2>
         <form id="installation-form">
@@ -56,6 +35,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="button" id="submit-sql">Tester la connexion</button>
         </form>
     </div>
+
+    <!-- Liste des étapes -->
+    <div id="validation-container">
+        <h2>Étapes de validation</h2>
+        <ul id="validation-steps">
+            <?php foreach ($stepDisplayNames as $step => $data): ?>
+                <li data-step="<?= htmlspecialchars($step) ?>" 
+                    class="status-pending" 
+                    <?= !empty($data['hidden']) ? 'style="display: none;"' : '' ?>>
+                    <?= htmlspecialchars($data['label']) ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+
+    <!-- Étape suivante -->
     <div id="next-step" style="display:none; margin-top: 20px;"></div>
 </body>
 </html>
