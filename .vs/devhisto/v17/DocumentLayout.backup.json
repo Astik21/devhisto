@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:public\\install.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\backend.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:public\\install\\backend.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\install.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:public\\install\\install.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\backend.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:public\\install\\backend.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:public\\install.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\rpard\\Source\\Repos\\Astik21\\devhisto\\public\\install\\steps.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -38,7 +38,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
@@ -74,7 +74,7 @@
               "RelativeDocumentMoniker": "public\\install\\install.js",
               "ToolTip": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\install.js",
               "RelativeToolTip": "public\\install\\install.js",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAYwKkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2024-12-28T16:35:55.367Z",
               "EditorCaption": ""
@@ -85,13 +85,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "backend.php",
               "DocumentMoniker": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\backend.php",
               "RelativeDocumentMoniker": "public\\install\\backend.php",
               "ToolTip": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\backend.php",
               "RelativeToolTip": "public\\install\\backend.php",
-              "ViewState": "AgIAAM8AAAAAAAAAAAAIwPAAAAAsAAAAAAAAAA==",
+              "ViewState": "AgIAAOQAAAAAAAAAAAAAAG8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002338|",
               "WhenOpened": "2024-12-28T16:21:33.961Z",
               "EditorCaption": ""
@@ -109,13 +109,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "install.php",
               "DocumentMoniker": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install.php",
               "RelativeDocumentMoniker": "public\\install.php",
               "ToolTip": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install.php",
               "RelativeToolTip": "public\\install.php",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAAIAAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002338|",
               "WhenOpened": "2024-12-28T15:44:23.625Z",
               "EditorCaption": ""
