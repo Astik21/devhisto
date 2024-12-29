@@ -1,5 +1,6 @@
 {
     "name": "astik21/devhisto",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Astik21\\Devhisto\\": "src/"
