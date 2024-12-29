@@ -1,13 +1,14 @@
 {
     "name": "astik21/devhisto",
     "description": "Projet de gestion de l'historique des devis",
+    "type": "project",
     "license": "MIT",
+    "require": {
+        "smalot/pdfparser": "^2.11"
+    },
     "autoload": {
         "psr-4": {
             "Astik21\\Devhisto\\": "src/"
         }
-    },
-    "require": {
-        "smalot/pdfparser": "^2.11"
     }
 }
