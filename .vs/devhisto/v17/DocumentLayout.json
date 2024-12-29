@@ -34,7 +34,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 9,
+          "SelectedChildIndex": 10,
           "Children": [
             {
               "$type": "Bookmark",
@@ -55,6 +55,10 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Bookmark",
@@ -104,7 +108,7 @@
               "RelativeDocumentMoniker": "public\\install\\backend.php",
               "ToolTip": "C:\\Users\\rpard\\source\\repos\\Astik21\\devhisto\\public\\install\\backend.php",
               "RelativeToolTip": "public\\install\\backend.php",
-              "ViewState": "AgIAAOEAAAAAAAAAAIBJwG8AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAN8AAAAAAAAAAEBVwG8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002338|",
               "WhenOpened": "2024-12-28T16:21:33.961Z",
               "EditorCaption": ""
