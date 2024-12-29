@@ -1,0 +1,11 @@
+{
+    "name": "astik21/devhisto",
+    "autoload": {
+        "psr-4": {
+            "Astik21\\Devhisto\\": "src/"
+        }
+    },
+    "require": {
+        "smalot/pdfparser": "^2.11"
+    }
+}
