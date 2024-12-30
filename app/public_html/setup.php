@@ -3,15 +3,22 @@ session_start();
 
 // === Variables à renseigner === //
 $githubZipUrl = "https://github.com/Astik21/devhisto/raw/main/releases/devhisto_v0.3.zip";
-$publicHtmlPath = '/opt/bitnami/nginx/html'; // Chemin monté pour Nginx
-$privatePath = '/app/private'; // Chemin monté pour PHP-FPM 
+$publicHtmlPath = __DIR__ . '/../html'; // Chemin monté pour public_html
+$privatePath = __DIR__ . '/../private'; // Chemin monté pour private
+$tempPath = $publicHtmlPath . '/temp_' . uniqid(); // Répertoire temporaire unique
 
 // === Fonction pour téléchargement et extraction === //
-function downloadAndExtractFromGitHub($githubZipUrl, $publicHtmlPath, $privatePath) {
+function downloadAndExtractFromGitHub($githubZipUrl, $publicHtmlPath, $privatePath, $tempPath) {
     $status = [];
 
+    // Création du répertoire temporaire
+    if (!is_dir($tempPath)) {
+        mkdir($tempPath, 0755, true);
+        $status[] = "Création du répertoire temporaire : $tempPath.";
+    }
+
     // Téléchargement du fichier ZIP
-    $zipFile = sys_get_temp_dir() . '/devhisto.zip'; // Fichier temporaire
+    $zipFile = $tempPath . '/devhisto.zip';
     $status[] = "Téléchargement en cours...";
     if (!file_put_contents($zipFile, file_get_contents($githubZipUrl))) {
         $status[] = "Erreur : Impossible de télécharger les fichiers depuis GitHub ($githubZipUrl).";
@@ -23,30 +30,30 @@ function downloadAndExtractFromGitHub($githubZipUrl, $publicHtmlPath, $privatePa
     $status[] = "Extraction des fichiers en cours...";
     $zip = new ZipArchive();
     if ($zip->open($zipFile) === TRUE) {
-        $tempExtractPath = sys_get_temp_dir() . '/devhisto_extracted';
-        if (!is_dir($tempExtractPath)) {
-            mkdir($tempExtractPath, 0755, true);
-        }
+        $tempExtractPath = $tempPath . '/extracted';
+        mkdir($tempExtractPath, 0755, true);
         $zip->extractTo($tempExtractPath);
         $zip->close();
+        $status[] = "Fichiers extraits dans $tempExtractPath.";
 
         // Déplacement des fichiers vers les bons répertoires
         if (is_dir("$tempExtractPath/public_html")) {
-            rename("$tempExtractPath/public_html", $publicHtmlPath);
+            recursiveCopy("$tempExtractPath/public_html", $publicHtmlPath);
             $status[] = "Fichiers publics déplacés vers $publicHtmlPath.";
         } else {
             $status[] = "Erreur : Le dossier public_html est introuvable dans l'archive.";
         }
 
         if (is_dir("$tempExtractPath/private")) {
-            rename("$tempExtractPath/private", $privatePath);
+            recursiveCopy("$tempExtractPath/private", $privatePath);
             $status[] = "Fichiers privés déplacés vers $privatePath.";
         } else {
             $status[] = "Erreur : Le dossier private est introuvable dans l'archive.";
         }
 
-        // Supprimer le dossier temporaire
-        system("rm -rf " . escapeshellarg($tempExtractPath));
+        // Suppression du dossier temporaire
+        system("rm -rf " . escapeshellarg($tempPath));
+        $status[] = "Répertoire temporaire supprimé : $tempPath.";
     } else {
         $status[] = "Erreur : Impossible d'extraire les fichiers ZIP.";
         unlink($zipFile);
@@ -60,14 +67,38 @@ function downloadAndExtractFromGitHub($githubZipUrl, $publicHtmlPath, $privatePa
     return $status;
 }
 
+// === Fonction pour copier récursivement === //
+function recursiveCopy($source, $destination) {
+    $directory = opendir($source);
+    if (!is_dir($destination)) {
+        mkdir($destination, 0755, true);
+    }
+
+    while (($file = readdir($directory)) !== false) {
+        if ($file !== '.' && $file !== '..') {
+            $srcFile = $source . '/' . $file;
+            $destFile = $destination . '/' . $file;
+
+            if (is_dir($srcFile)) {
+                recursiveCopy($srcFile, $destFile);
+            } else {
+                copy($srcFile, $destFile);
+            }
+        }
+    }
+    closedir($directory);
+}
+
 // === Exécution === //
 $steps = [];
 
 // Téléchargement et extraction
-$steps = array_merge($steps, downloadAndExtractFromGitHub($githubZipUrl, $publicHtmlPath, $privatePath));
+$steps = array_merge($steps, downloadAndExtractFromGitHub($githubZipUrl, $publicHtmlPath, $privatePath, $tempPath));
 
-// Redirection vers la page install.php si tout est OK
-if (end($steps) === "Fichier ZIP temporaire supprimé.") {
+// Ajouter le bouton si tout est OK
+$success = in_array("Fichiers publics déplacés vers $publicHtmlPath.", $steps) &&
+           in_array("Fichiers privés déplacés vers $privatePath.", $steps);
+if ($success) {
     $steps[] = "Redirection vers la page install.php...";
 }
 ?>
@@ -139,7 +170,7 @@ if (end($steps) === "Fichier ZIP temporaire supprimé.") {
                 <?php endforeach; ?>
             </ul>
         </div>
-        <?php if (end($steps) === "Redirection vers la page install.php..."): ?>
+        <?php if ($success): ?>
             <div class="button-container">
                 <form method="get" action="/install.php">
                     <button type="submit">Passer à l'étape suivante</button>
