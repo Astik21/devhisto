@@ -36,8 +36,42 @@ if (!isset($_SESSION['user_id']) && $page !== 'login') {
 
 // Charger les pages dynamiquement
 $pagePath = __DIR__ . "/pages/$page.php";
-if (file_exists($pagePath)) {
-    require $pagePath;
-} else {
-    require __DIR__ . '/pages/404.php';
-}
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Bienvenue dans DevHisto</h1>
+        <nav>
+            <ul>
+                <li><a href="?page=home">Accueil</a></li>
+                <li><a href="?page=add">Ajouter</a></li>
+                <li><a href="?page=view">Consulter</a></li>
+                <li><a href="?page=stats">Statistiques</a></li>
+                <li><a href="?logout=true">Déconnexion</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main id="main-content">
+        <?php
+        if (file_exists($pagePath)) {
+            require $pagePath;
+        } else {
+            require __DIR__ . '/pages/404.php';
+        }
+        ?>
+    </main>
+    <footer>
+        <p>&copy; <?= date('Y') ?> DevHisto. Tous droits réservés.</p>
+    </footer>
+    <?php if ($page !== 'login'): ?>
+        <script src="/assets/dashboard.js"></script>
+    <?php endif; ?>
+</body>
+</html>
