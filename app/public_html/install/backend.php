@@ -142,8 +142,114 @@ PHP;
                 echo json_encode(['status' => 'ko', 'message' => 'Erreur critique : ' . $e->getMessage(), 'displayName' => $stepDisplayNames[$step]['label']]);
             }
             break;
+        // Création des tables SQL
+        case 'create_sql_tables':
+            try {
+                $pdo = new PDO("mysql:host={$formData['db_host']};port={$formData['db_port']};dbname={$formData['db_name']}", $formData['db_user'], $formData['db_pass']);
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Autres cas (inchangés)
+                // Vérifier l'existence des tables avec le préfixe devhisto_
+                $existingTables = $pdo->query("SHOW TABLES LIKE 'devhisto_%'")->fetchAll(PDO::FETCH_COLUMN);
+
+                if (!empty($existingTables)) {
+                    // Tables existantes, demander confirmation
+                    echo json_encode([
+                        'status' => 'ko',
+                        'message' => 'Des tables avec le préfixe devhisto_ existent déjà.',
+                        'actionRequired' => true,
+                        'existingTables' => $existingTables,
+                        'displayName' => $stepDisplayNames[$step]['label']
+                    ]);
+                    break;
+                }
+
+                // Créer les tables
+                $sql = file_get_contents(__DIR__ . '/bdd.sql');
+                $pdo->exec($sql);
+
+                echo json_encode(['status' => 'ok', 'displayName' => $stepDisplayNames[$step]['label']]);
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'status' => 'ko',
+                    'message' => 'Création des tables échouée : ' . $e->getMessage(),
+                    'displayName' => $stepDisplayNames[$step]['label']
+                ]);
+            }
+            break;
+
+        //Suppression des tables existantes
+        case 'delete_existing_tables':
+            try {
+                $pdo = new PDO("mysql:host={$formData['db_host']};port={$formData['db_port']};dbname={$formData['db_name']}", $formData['db_user'], $formData['db_pass']);
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                // Désactiver les contraintes de clé étrangère
+                $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
+
+                // Supprimer les tables existantes avec le préfixe devhisto_
+                $existingTables = $pdo->query("SHOW TABLES LIKE 'devhisto_%'")->fetchAll(PDO::FETCH_COLUMN);
+
+                foreach ($existingTables as $table) {
+                    $pdo->exec("DROP TABLE $table");
+                }
+
+                // Réactiver les contraintes de clé étrangère
+                $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
+
+                echo json_encode(['status' => 'ok', 'message' => 'Tables existantes supprimées.', 'displayName' => $stepDisplayNames[$step]['label']]);
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'status' => 'ko',
+                    'message' => 'Erreur lors de la suppression des tables : ' . $e->getMessage(),
+                    'displayName' => $stepDisplayNames[$step]['label']
+                ]);
+            }
+            break;
+
+        // Création de l'utilisateur admin
+        case 'create_admin_user':
+            try {
+                $pdo = new PDO("mysql:host={$formData['db_host']};port={$formData['db_port']};dbname={$formData['db_name']}", $formData['db_user'], $formData['db_pass']);
+                $passwordHash = password_hash('admin', PASSWORD_BCRYPT);
+                $stmt = $pdo->prepare("INSERT INTO devhisto_users (username, password, role_id) VALUES ('admin', :password, (SELECT id FROM devhisto_roles WHERE role_name = 'admin'))");
+                $stmt->bindParam(':password', $passwordHash);
+                $stmt->execute();
+                echo json_encode(['status' => 'ok', 'displayName' => $stepDisplayNames[$step]['label']]);
+            } catch (PDOException $e) {
+                echo json_encode(['status' => 'ko', 'message' => 'Création de l\'utilisateur admin échouée : ' . $e->getMessage(), 'displayName' => $stepDisplayNames[$step]['label']]);
+            }
+            break;
+
+        // Suppression du répertoire install et du fichier install.php
+        case 'remove_install_directory':
+            $installDir = __DIR__; // Répertoire actuel (install/)
+            $rootInstallFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'install.php'; // Fichier install.php à la racine
+            $rootSetupFile = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'setup.php'; // Fichier setup.php à la racine
+
+            try {
+                // Supprimer les fichiers et répertoires dans install/
+                $files = array_diff(scandir($installDir), ['.', '..']);
+                foreach ($files as $file) {
+                    $filePath = $installDir . DIRECTORY_SEPARATOR . $file;
+                    is_dir($filePath) ? rmdir($filePath) : unlink($filePath);
+                }
+                rmdir($installDir); // Supprimer le répertoire install/
+
+                // Supprimer install.php à la racine
+                if (file_exists($rootInstallFile)) {
+                    unlink($rootInstallFile);
+                }
+
+                // Supprimer setup.php à la racine
+                if (file_exists($rootSetupFile)) {
+                    unlink($rootSetupFile);
+                }
+
+                echo json_encode(['status' => 'ok', 'displayName' => $stepDisplayNames[$step]['label']]);
+            } catch (Exception $e) {
+                echo json_encode(['status' => 'ko', 'message' => 'Erreur lors de la suppression : ' . $e->getMessage(), 'displayName' => $stepDisplayNames[$step]['label']]);
+            }
+            break;
         default:
             echo json_encode(['status' => 'ko', 'message' => 'Étape inconnue.', 'displayName' => $stepDisplayNames[$step]['label']]);
             break;
